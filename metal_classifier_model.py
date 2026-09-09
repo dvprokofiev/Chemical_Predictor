@@ -66,23 +66,20 @@ print(f"Contains NaN: {y_classification.isna().any()}")
 
 # Remove any remaining NaN values from target
 valid_idx = ~y_classification.isna()
-X_train = X_train[valid_idx]
-X_test = X_test[valid_idx]
-y_class_train = y_class_train[valid_idx]
-y_class_test = y_class_test[valid_idx]
+X = X[valid_idx]
+y_classification = y_classification[valid_idx]
 
 # Ensure target is boolean/int
-y_class_train = y_class_train.astype(int)
-y_class_test = y_class_test.astype(int)
+y_classification = y_classification.astype(int)
 
 print(f"\nAfter cleaning:")
-print(f"y_class_train dtype: {y_class_train.dtype}")
-print(f"Unique values: {y_class_train.unique()}")
+print(f"y_classification dtype: {y_classification.dtype}")
+print(f"Unique values: {y_classification.unique()}")
 
 # ===== TRAIN/TEST SPLIT (REVISED) =====
 print("\n=== TRAIN/TEST SPLIT ===")
 X_train, X_test, y_class_train, y_class_test = train_test_split(
-    X, y_classification.astype(int),  # Ensure int type during split
+    X, y_classification,  # Ensure int type during split
     test_size=0.2,
     random_state=42
 )
