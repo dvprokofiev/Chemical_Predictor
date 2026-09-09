@@ -11,7 +11,7 @@ app = Flask(__name__)
 model = joblib.load('metals_regression_model.joblib')
 classifier = joblib.load('metals_elasticity_classifier.joblib')
 scaler = joblib.load('metals_scaler.joblib')
-metal_indentifier = joblib.load('metal_classifier.joblib')
+metal_identifier = joblib.load('metal_classifier.joblib')
 bulk_modulus = joblib.load('metals_bulk_model.joblib')
 shear_modulus = joblib.load('metals_shear_model.joblib')
 
@@ -55,27 +55,29 @@ def predict():
         predicting = pd.DataFrame([features], columns=feature_names)
         predicting.columns = predicting.columns.astype(str)
         if not metal_on:
-            is_metal = metal_indentifier.predict(predicting)[0]
+            is_metal = metal_identifier.predict(predicting)[0]
             predicting["is_metal"] = is_metal
             predicting = predicting[expected_features]
         else:
             predicting["is_metal"] = is_metal
             predicting = predicting[expected_features]
 
-        if is_metal:
-            predicting_scaled = scaler.transform(predicting)
-            regression_prediction = model.predict(predicting_scaled)[0]
-            elasticity_prediction = classifier.predict(predicting_scaled)[0]
-            bulk_prediction= bulk_modulus.predict(predicting_scaled)[0]
-            shear_prediction = shear_modulus.predict(predicting_scaled)[0]
+        # Select appropriate models based on is_metal flag
+        current_scaler = scaler if is_metal else nm_scaler
+        current_model = model if is_metal else nm_model
+        current_classifier = classifier if is_metal else nm_classifier
+        current_bulk = bulk_modulus if is_metal else nm_bulk_modulus
+        current_shear = shear_modulus if is_metal else nm_shear_modulus
 
-        else:
-            predicting_scaled = nm_scaler.transform(predicting)
-            regression_prediction = nm_model.predict(predicting_scaled)[0]
-            elasticity_prediction = nm_classifier.predict(predicting_scaled)[0]
-            bulk_prediction = nm_bulk_modulus.predict(predicting_scaled)[0]
-            shear_prediction = nm_shear_modulus.predict(predicting_scaled)[0]
+        if not is_metal:
             print("BB")
+
+        predicting_scaled = current_scaler.transform(predicting)
+        regression_prediction = current_model.predict(predicting_scaled)[0]
+        elasticity_prediction = current_classifier.predict(predicting_scaled)[0]
+        bulk_prediction = current_bulk.predict(predicting_scaled)[0]
+        shear_prediction = current_shear.predict(predicting_scaled)[0]
+
         result = {
             'formula': formula,
             'is_metal': bool(is_metal),
@@ -91,7 +93,7 @@ def predict():
         return jsonify(result)
     except Exception as e:
         print(e)
-        return jsonify({'error': str(e), 'status': 'error'})
+        return jsonify({'error': str(e), 'status': 'error'}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)

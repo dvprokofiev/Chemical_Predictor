@@ -79,14 +79,15 @@ df = df[df['volume_per_atom'] < 100]
 # Filter out negative moduli (physically impossible)
 df = df[(df['bulk_modulus'] > 0) & (df['shear_modulus'] > 0)]
 def remove_outliers_iqr(df, columns, multiplier=1.5):
-    """Remove outliers beyond multiplier * IQR from Q3"""
+    """Remove outliers beyond multiplier * IQR from Q1 and Q3"""
     df_clean = df.copy()
     for col in columns:
         Q1 = df_clean[col].quantile(0.25)
         Q3 = df_clean[col].quantile(0.75)
         IQR = Q3 - Q1
+        lower_bound = Q1 - multiplier * IQR
         upper_bound = Q3 + multiplier * IQR
-        df_clean = df_clean[df_clean[col] <= upper_bound]
+        df_clean = df_clean[(df_clean[col] >= lower_bound) & (df_clean[col] <= upper_bound)]
     return df_clean
 
 df = remove_outliers_iqr(df, ['bulk_modulus', 'shear_modulus'], multiplier=1.5)
